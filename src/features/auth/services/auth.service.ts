@@ -1,18 +1,42 @@
-import { z } from "zod";
+import bcrypt from "bcrypt";
 
-export const RegisterSchema = z.object({
-  name: z
-    .string()
-    .trim()
-    .min(2, "Name must be at least 2 characters.")
-    .max(50, "Name cannot exceed 50 characters."),
+import { prisma } from "@/lib/prisma";
+import { RegisterInput } from "../schemas/register.schema";
+import { RegisterActionState } from "../types/action-state";
 
-  email: z.email("Please enter a valid email address.").trim().toLowerCase(),
+export async function registerUser(
+  data: RegisterInput,
+): Promise<RegisterActionState> {
+  const { name, email, password } = data;
 
-  password: z
-    .string()
-    .min(8, "Password must be at least 8 characters.")
-    .max(100, "Password cannot exceed 100 characters."),
-});
+  // Check if the email is already registered
+  const existingUser = await prisma.user.findUnique({
+    where: {
+      email,
+    },
+  });
 
-export type RegisterInput = z.infer<typeof RegisterSchema>;
+  if (existingUser) {
+    return {
+      success: false,
+      message: "An account with this email already exists.",
+    };
+  }
+
+  // Hash the password
+  const hashedPassword = await bcrypt.hash(password, 10);
+
+  // Create the user
+  await prisma.user.create({
+    data: {
+      name,
+      email,
+      password: hashedPassword,
+    },
+  });
+
+  return {
+    success: true,
+    message: "Account created successfully.",
+  };
+}
