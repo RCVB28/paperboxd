@@ -10,5 +10,113 @@ generator client {
 
 datasource db {
   provider = "postgresql"
-  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  ADMIN
+  USER
+}
+
+enum BookType {
+  BOOK
+  COMIC
+}
+
+model User {
+  id          String     @id @default(cuid())
+  name        String
+  email       String     @unique
+  password    String
+  role        Role       @default(USER)
+
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+
+  booksAdded  Book[]     @relation("BookCreator")
+  reviews     Review[]
+  favorites   Favorite[]
+}
+
+model Author {
+  id          String     @id @default(cuid())
+  name        String     @unique
+  bio         String?
+
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+
+  books       Book[]
+}
+
+model Genre {
+  id          String     @id @default(cuid())
+  name        String     @unique
+
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+
+  books       Book[]
+}
+
+model Book {
+  id               String      @id @default(cuid())
+
+  openLibraryKey   String?     @unique
+  isbn             String?     @unique
+
+  title            String
+  description      String?
+  coverUrl         String?
+  publishedYear    Int?
+  type             BookType    @default(BOOK)
+
+  createdAt        DateTime    @default(now())
+  updatedAt        DateTime    @updatedAt
+
+  authorId         String
+  author           Author      @relation(fields: [authorId], references: [id])
+
+  genreId          String
+  genre            Genre       @relation(fields: [genreId], references: [id])
+
+  createdBy        String
+  creator          User        @relation("BookCreator", fields: [createdBy], references: [id])
+
+  reviews          Review[]
+  favorites        Favorite[]
+
+  @@index([title])
+  @@index([genreId])
+  @@index([authorId])
+}
+
+model Review {
+  id          String      @id @default(cuid())
+  rating      Int
+  comment     String
+
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  bookId      String
+  book        Book        @relation(fields: [bookId], references: [id], onDelete: Cascade)
+
+  userId      String
+  user        User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([bookId, userId])
+}
+
+model Favorite {
+  id          String      @id @default(cuid())
+
+  createdAt   DateTime    @default(now())
+
+  bookId      String
+  book        Book        @relation(fields: [bookId], references: [id], onDelete: Cascade)
+
+  userId      String
+  user        User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([bookId, userId])
 }
