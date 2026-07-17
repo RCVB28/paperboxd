@@ -14,3 +14,12 @@ export const initialRegisterActionState: RegisterActionState = {
   message: "",
   errors: {},
 };
+
+export type LoginActionState = {
+  success: boolean;
+  message: string;
+  errors?: {
+    email?: string[];
+    password?: string[];
+  };
+};

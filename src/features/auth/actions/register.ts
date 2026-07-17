@@ -1,7 +1,7 @@
 "use server";
 
 import { RegisterSchema } from "../schemas/register.schema";
-import { registerUser } from "../services/auth.service";
+import { registerUser } from "../services/register.service";
 import { RegisterActionState } from "../types/action-state";
 
 export async function register(

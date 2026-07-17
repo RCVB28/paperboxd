@@ -37,6 +37,7 @@ export async function registerUser(
 
   return {
     success: true,
-    message: "Account created successfully.",
+    message:
+      "Account created successfully! Redirecting you to the login page...",
   };
 }

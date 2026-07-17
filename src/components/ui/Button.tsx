@@ -1,4 +1,5 @@
 import * as React from "react";
+import { Spinner } from "./Spinner";
 import { cn } from "@/lib/utils";
 
 // ─── Variants & Sizes ────────────────────────────────────────────────────────
@@ -25,8 +26,7 @@ const sizeClasses = {
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
-export interface ButtonProps
-  extends React.ButtonHTMLAttributes<HTMLButtonElement> {
+export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: keyof typeof variantClasses;
   size?: keyof typeof sizeClasses;
   /** Shows a spinner and disables the button while true */
@@ -55,7 +55,7 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
       disabled,
       ...props
     },
-    ref
+    ref,
   ) => {
     return (
       <button
@@ -73,13 +73,17 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
           variantClasses[variant],
           sizeClasses[size],
           fullWidth && "w-full",
-          className
+          className,
         )}
         {...props}
       >
         {isLoading ? (
           <>
-            <LoadingSpinner />
+            <Spinner
+              size="sm"
+              label="Loading"
+              className="border-current border-t-transparent"
+            />
             <span>{children}</span>
           </>
         ) : (
@@ -91,7 +95,7 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
         )}
       </button>
     );
-  }
+  },
 );
 
 Button.displayName = "Button";

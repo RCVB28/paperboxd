@@ -2,8 +2,6 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
-import { Input, type InputProps } from "@/components/ui/Input";
-import { Label } from "@/components/ui/Label";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { RegisterSchema } from "../schemas/register.schema";
@@ -12,6 +10,9 @@ import Link from "next/link";
 import { register as registerAction } from "../actions/register";
 import { Alert } from "@/components/ui/Alert";
 import * as React from "react";
+import { useRouter } from "next/navigation";
+import { AuthLogo } from "../../../components/branding/Logo";
+import { AuthField } from "./AuthField";
 
 // ─── BookMark glyph — signature visual element ───────────────────────────────
 // A simple open-book SVG that acts as a wordmark/logo substitute on auth pages.
@@ -19,135 +20,11 @@ import * as React from "react";
 
 type RegisterFormValues = z.infer<typeof RegisterSchema>;
 
-function BookGlyph() {
-  return (
-    <svg
-      viewBox="0 0 40 28"
-      fill="none"
-      xmlns="http://www.w3.org/2000/svg"
-      className="h-7 w-auto"
-      aria-hidden="true"
-    >
-      {/* Left page */}
-      <path
-        d="M20 4C20 4 12 2 4 4V24C12 22 20 24 20 24"
-        stroke="#b45309"
-        strokeWidth="2"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-      {/* Right page */}
-      <path
-        d="M20 4C20 4 28 2 36 4V24C28 22 20 24 20 24"
-        stroke="#b45309"
-        strokeWidth="2"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-      {/* Spine */}
-      <line
-        x1="20"
-        y1="4"
-        x2="20"
-        y2="24"
-        stroke="#b45309"
-        strokeWidth="1.5"
-        strokeLinecap="round"
-      />
-      {/* Left text lines */}
-      <line
-        x1="8"
-        y1="10"
-        x2="17"
-        y2="10"
-        stroke="#b45309"
-        strokeWidth="1"
-        strokeLinecap="round"
-        opacity="0.5"
-      />
-      <line
-        x1="8"
-        y1="14"
-        x2="17"
-        y2="14"
-        stroke="#b45309"
-        strokeWidth="1"
-        strokeLinecap="round"
-        opacity="0.5"
-      />
-      <line
-        x1="8"
-        y1="18"
-        x2="14"
-        y2="18"
-        stroke="#b45309"
-        strokeWidth="1"
-        strokeLinecap="round"
-        opacity="0.5"
-      />
-      {/* Right text lines */}
-      <line
-        x1="23"
-        y1="10"
-        x2="32"
-        y2="10"
-        stroke="#b45309"
-        strokeWidth="1"
-        strokeLinecap="round"
-        opacity="0.5"
-      />
-      <line
-        x1="23"
-        y1="14"
-        x2="32"
-        y2="14"
-        stroke="#b45309"
-        strokeWidth="1"
-        strokeLinecap="round"
-        opacity="0.5"
-      />
-      <line
-        x1="23"
-        y1="18"
-        x2="29"
-        y2="18"
-        stroke="#b45309"
-        strokeWidth="1"
-        strokeLinecap="round"
-        opacity="0.5"
-      />
-    </svg>
-  );
-}
-
-// ─── Field — Label + Input stacked, reused per field ─────────────────────────
-
-interface FieldProps extends InputProps {
-  id: string;
-  label: string;
-  type?: React.InputHTMLAttributes<HTMLInputElement>["type"];
-  placeholder?: string;
-  autoComplete?: string;
-  required?: boolean;
-  hint?: string;
-  error?: string;
-}
-
-function Field({ label, hint, error, required, ...inputProps }: FieldProps) {
-  return (
-    <div className="flex flex-col gap-1.5">
-      <Label htmlFor={inputProps.id} required={required} hint={hint}>
-        {label}
-      </Label>
-
-      <Input error={error} {...inputProps} />
-    </div>
-  );
-}
-
 // ─── RegisterForm ─────────────────────────────────────────────────────────────
 
 export function RegisterForm() {
+  const router = useRouter();
+
   const {
     register,
     handleSubmit,
@@ -166,12 +43,20 @@ export function RegisterForm() {
     message: string;
   } | null>(null);
   const [isSubmitting, setIsSubmitting] = React.useState(false);
+  const redirectTimeout = React.useRef<NodeJS.Timeout | null>(null);
 
+  React.useEffect(() => {
+    return () => {
+      if (redirectTimeout.current) {
+        clearTimeout(redirectTimeout.current);
+      }
+    };
+  }, []);
   return (
     <div className="flex min-h-screen flex-col items-center justify-center bg-zinc-50 px-4 py-12 dark:bg-zinc-950">
       {/* Brand mark above the card */}
       <div className="mb-6 flex flex-col items-center gap-2">
-        <BookGlyph />
+        <AuthLogo />
         <span className="text-sm font-semibold tracking-widest text-zinc-400 uppercase dark:text-zinc-500">
           Paperboxd
         </span>
@@ -205,11 +90,12 @@ export function RegisterForm() {
             </Alert>
           )}
           <form
-            onSubmit={handleSubmit(
-              async (data) => {
-                // Clear any previous server feedback
-                setFeedback(null);
+            onSubmit={handleSubmit(async (data) => {
+              // Clear previous feedback and show loading
+              setFeedback(null);
+              setIsSubmitting(true);
 
+              try {
                 const formData = new FormData();
 
                 Object.entries(data).forEach(([key, value]) => {
@@ -228,16 +114,25 @@ export function RegisterForm() {
                   variant: result.success ? "success" : "error",
                   message: result.message,
                 });
-              },
-              () => {
-                // Validation failed, clear old server feedback
-                setFeedback(null);
-              },
-            )}
+                if (result.success) {
+                  redirectTimeout.current = setTimeout(() => {
+                    router.push("/login");
+                  }, 1500);
+                }
+              } catch {
+                setFeedback({
+                  variant: "error",
+                  message: "Something went wrong. Please try again.",
+                });
+              } finally {
+                // Always stop loading
+                setIsSubmitting(false);
+              }
+            })}
             noValidate
           >
             <div className="flex flex-col gap-4">
-              <Field
+              <AuthField
                 id="name"
                 label="Name"
                 placeholder="Ada Lovelace"
@@ -246,7 +141,7 @@ export function RegisterForm() {
                 error={errors.name?.message}
                 {...register("name")}
               />
-              <Field
+              <AuthField
                 id="email"
                 label="Email"
                 type="email"
@@ -257,7 +152,7 @@ export function RegisterForm() {
                 {...register("email")}
               />
 
-              <Field
+              <AuthField
                 id="password"
                 label="Password"
                 type="password"
@@ -269,7 +164,7 @@ export function RegisterForm() {
                 {...register("password")}
               />
 
-              <Field
+              <AuthField
                 id="confirmPassword"
                 label="Confirm password"
                 type="password"
@@ -284,8 +179,14 @@ export function RegisterForm() {
               <div className="pt-1" />
 
               {/* ── Submit ── */}
-              <Button type="submit" variant="primary" size="md" fullWidth>
-                Create account
+              <Button
+                type="submit"
+                variant="primary"
+                size="md"
+                fullWidth
+                isLoading={isSubmitting}
+              >
+                {isSubmitting ? "Creating account..." : "Create account"}
               </Button>
 
               {/* ── Sign-in redirect ── */}
