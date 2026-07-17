@@ -4,12 +4,14 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { Input, type InputProps } from "@/components/ui/Input";
 import { Label } from "@/components/ui/Label";
-import { useActionState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { RegisterSchema } from "../schemas/register.schema";
 import { z } from "zod";
 import Link from "next/link";
+import { register as registerAction } from "../actions/register";
+import { Alert } from "@/components/ui/Alert";
+import * as React from "react";
 
 // ─── BookMark glyph — signature visual element ───────────────────────────────
 // A simple open-book SVG that acts as a wordmark/logo substitute on auth pages.
@@ -159,6 +161,11 @@ export function RegisterForm() {
       confirmPassword: "",
     },
   });
+  const [feedback, setFeedback] = React.useState<{
+    variant: "success" | "error";
+    message: string;
+  } | null>(null);
+  const [isSubmitting, setIsSubmitting] = React.useState(false);
 
   return (
     <div className="flex min-h-screen flex-col items-center justify-center bg-zinc-50 px-4 py-12 dark:bg-zinc-950">
@@ -184,14 +191,49 @@ export function RegisterForm() {
 
         {/* ── Form body ── */}
         <CardContent>
-          {/*
-            onSubmit is left as a no-op placeholder.
-            React Hook Form + server action wired in the next phase.
-          */}
+          {feedback && (
+            <Alert
+              variant={feedback.variant}
+              title={
+                feedback.variant === "success"
+                  ? "Success"
+                  : "Registration Failed"
+              }
+              className="mb-4"
+            >
+              {feedback.message}
+            </Alert>
+          )}
           <form
-            onSubmit={handleSubmit((data) => {
-              console.log(data);
-            })}
+            onSubmit={handleSubmit(
+              async (data) => {
+                // Clear any previous server feedback
+                setFeedback(null);
+
+                const formData = new FormData();
+
+                Object.entries(data).forEach(([key, value]) => {
+                  formData.append(key, value);
+                });
+
+                const result = await registerAction(
+                  {
+                    success: false,
+                    message: "",
+                  },
+                  formData,
+                );
+
+                setFeedback({
+                  variant: result.success ? "success" : "error",
+                  message: result.message,
+                });
+              },
+              () => {
+                // Validation failed, clear old server feedback
+                setFeedback(null);
+              },
+            )}
             noValidate
           >
             <div className="flex flex-col gap-4">
