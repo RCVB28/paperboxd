@@ -4,7 +4,7 @@ import { RegisterSchema } from "../schemas/register.schema";
 import { registerUser } from "../services/auth.service";
 import { RegisterActionState } from "../types/action-state";
 
-export async function registerAction(
+export async function register(
   previousState: RegisterActionState,
   formData: FormData,
 ): Promise<RegisterActionState> {

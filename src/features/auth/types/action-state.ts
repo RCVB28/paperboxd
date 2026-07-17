@@ -5,5 +5,12 @@ export type RegisterActionState = {
     name?: string[];
     email?: string[];
     password?: string[];
+    confirmPassword?: string[];
   };
+};
+
+export const initialRegisterActionState: RegisterActionState = {
+  success: false,
+  message: "",
+  errors: {},
 };
