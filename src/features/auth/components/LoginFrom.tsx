@@ -7,7 +7,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { LoginSchema } from "../schemas/login.schema"; // Updated import schema path
 import { z } from "zod";
 import Link from "next/link";
-import { login as loginAction } from "../actions/login"; // Updated action import path
+import { signIn } from "next-auth/react";
 import { Alert } from "@/components/ui/Alert";
 import * as React from "react";
 import { useRouter } from "next/navigation";
@@ -85,43 +85,34 @@ export function LoginForm() {
           )}
           <form
             onSubmit={handleSubmit(async (data) => {
-              // Clear previous feedback and show loading
               setFeedback(null);
               setIsSubmitting(true);
 
               try {
-                const formData = new FormData();
-
-                Object.entries(data).forEach(([key, value]) => {
-                  formData.append(key, value);
+                const result = await signIn("credentials", {
+                  email: data.email,
+                  password: data.password,
+                  redirect: false,
                 });
 
-                const result = await loginAction(
-                  {
-                    success: false,
-                    message: "",
-                  },
-                  formData,
-                );
+                if (result?.error) {
+                  setFeedback({
+                    variant: "error",
+                    message: "Invalid email or password.",
+                  });
 
-                setFeedback({
-                  variant: result.success ? "success" : "error",
-                  message: result.message,
-                });
-
-                if (result.success) {
-                  redirectTimeout.current = setTimeout(() => {
-                    // Redirect directly to home dashboard on successful log in
-                    router.push("/dashboard");
-                  }, 1500);
+                  return;
                 }
-              } catch {
+
                 setFeedback({
-                  variant: "error",
-                  message: "Something went wrong. Please try again.",
+                  variant: "success",
+                  message: "Login successful.",
                 });
+
+                redirectTimeout.current = setTimeout(() => {
+                  router.push("/dashboard");
+                }, 1000);
               } finally {
-                // Always stop loading
                 setIsSubmitting(false);
               }
             })}
