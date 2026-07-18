@@ -135,7 +135,7 @@ export function RegisterForm() {
               <AuthField
                 id="name"
                 label="Name"
-                placeholder="Ada Lovelace"
+                placeholder="Name_Name"
                 autoComplete="name"
                 required
                 error={errors.name?.message}
@@ -145,7 +145,7 @@ export function RegisterForm() {
                 id="email"
                 label="Email"
                 type="email"
-                placeholder="ada@example.com"
+                placeholder="Name@example.com"
                 autoComplete="email"
                 required
                 error={errors.email?.message}

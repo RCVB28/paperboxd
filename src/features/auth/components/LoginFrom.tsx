@@ -123,7 +123,7 @@ export function LoginForm() {
                 id="email"
                 label="Email"
                 type="email"
-                placeholder="ada@example.com"
+                placeholder="Name@example.com"
                 autoComplete="email"
                 required
                 error={errors.email?.message}

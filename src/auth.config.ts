@@ -78,6 +78,10 @@ export default {
     authorized({ auth, request }) {
       const pathname = request.nextUrl.pathname;
 
+      console.log("=== AUTH DEBUG ===");
+      console.log("Path:", request.nextUrl.pathname);
+      console.log("Auth:", auth);
+
       const isLoggedIn = !!auth?.user;
       const isAdmin = auth?.user?.role === "ADMIN";
 
