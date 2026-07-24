@@ -1,14 +1,24 @@
-"use client";
-
 import * as React from "react";
 import { cn } from "@/lib/utils";
 
-// ─── Types ───────────────────────────────────────────────────────────────────
+// ─── Types ────────────────────────────────────────────────────────────────────
 
 export interface TextareaProps extends React.TextareaHTMLAttributes<HTMLTextAreaElement> {
-  /** Error message — also sets aria-invalid and a red border */
+  /** Stacked label rendered above the textarea */
+  label?: string;
+  /** Error message — takes priority over helperText, sets aria-invalid + red border */
   error?: string;
-  /** Show character count (requires maxLength to be set) */
+  /** Muted helper text shown below the textarea when there's no error */
+  helperText?: string;
+  /** Adds a red asterisk after the label */
+  required?: boolean;
+  /** Makes the textarea (and its wrapper) span the full width of its container */
+  fullWidth?: boolean;
+  /**
+   * Optional character counter, shown alongside helper/error text.
+   * Not part of the original spec, but kept since ReviewForm already
+   * depends on it — pass `maxLength` alongside this to enable it.
+   */
   showCount?: boolean;
 }
 
@@ -16,46 +26,102 @@ export interface TextareaProps extends React.TextareaHTMLAttributes<HTMLTextArea
 
 export const Textarea = React.forwardRef<HTMLTextAreaElement, TextareaProps>(
   (
-    { className, error, showCount, id, maxLength, value, onChange, ...props },
+    {
+      label,
+      error,
+      helperText,
+      required,
+      fullWidth = true,
+      showCount,
+      className,
+      id,
+      maxLength,
+      value,
+      onChange,
+      disabled,
+      readOnly,
+      ...props
+    },
     ref,
   ) => {
+    // Generate a stable id when the caller doesn't provide one, so
+    // label/aria-describedby association always works without the
+    // consumer having to manage ids by hand.
+    const generatedId = React.useId();
+    const textareaId = id ?? generatedId;
+    const helperId = `${textareaId}-helper`;
+    const errorId = `${textareaId}-error`;
+
+    // Local char count, only tracked when showCount is requested.
     const [count, setCount] = React.useState(
       typeof value === "string" ? value.length : 0,
     );
-    const errorId = error && id ? `${id}-error` : undefined;
 
     const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-      setCount(e.target.value.length);
+      if (showCount) setCount(e.target.value.length);
       onChange?.(e);
     };
 
+    // error takes priority; helperText only shows when there's no error.
+    const describedBy = error ? errorId : helperText ? helperId : undefined;
+
     return (
-      <div className="flex flex-col gap-1 w-full">
+      <div
+        className={cn("flex flex-col gap-1.5", fullWidth ? "w-full" : "w-fit")}
+      >
+        {/* ── Label ── */}
+        {label && (
+          <label
+            htmlFor={textareaId}
+            className={cn(
+              "text-sm font-medium text-zinc-700 dark:text-zinc-300",
+              disabled && "opacity-50",
+            )}
+          >
+            {label}
+            {required && (
+              <span
+                className="ml-1 text-red-500"
+                aria-hidden="true"
+                title="Required"
+              >
+                *
+              </span>
+            )}
+          </label>
+        )}
+
+        {/* ── Textarea ── */}
         <textarea
           ref={ref}
-          id={id}
-          maxLength={maxLength}
+          id={textareaId}
           value={value}
           onChange={handleChange}
+          maxLength={maxLength}
+          disabled={disabled}
+          readOnly={readOnly}
           aria-invalid={!!error}
-          aria-describedby={errorId}
+          aria-describedby={describedBy}
+          aria-required={required}
           className={cn(
             // Base
-            "w-full rounded-md border bg-white text-sm text-zinc-900",
+            "rounded-xl border bg-white text-sm text-zinc-900 shadow-sm",
             "placeholder:text-zinc-400",
+            // Sizing & resize — vertical only, so layout width stays stable
+            "min-h-[100px] w-full resize-y px-3.5 py-2.5",
+            // Smooth focus transition
             "transition-colors duration-150",
-            // Sizing
-            "min-h-[100px] px-3 py-2",
-            // Border & focus
+            // Border & focus ring — amber accent
             "border-zinc-300 focus:border-amber-700 focus:outline-none focus:ring-2 focus:ring-amber-700/20",
             // Dark mode
             "dark:bg-zinc-900 dark:border-zinc-600 dark:text-zinc-100 dark:placeholder:text-zinc-500",
             "dark:focus:border-amber-600 dark:focus:ring-amber-600/20",
-            // Resize
-            "resize-y",
             // Disabled
-            "disabled:cursor-not-allowed disabled:opacity-50",
-            // Error
+            "disabled:cursor-not-allowed disabled:bg-zinc-50 disabled:text-zinc-400 disabled:opacity-70",
+            "dark:disabled:bg-zinc-800/50",
+            // Readonly — visually distinct from a normal editable state
+            readOnly && "bg-zinc-50 focus:ring-0 dark:bg-zinc-900/40",
+            // Error state overrides the default border/focus colors
             error &&
               "border-red-500 focus:border-red-500 focus:ring-red-500/20",
             className,
@@ -63,18 +129,26 @@ export const Textarea = React.forwardRef<HTMLTextAreaElement, TextareaProps>(
           {...props}
         />
 
-        {/* Footer row: error left, count right */}
-        {(error || (showCount && maxLength)) && (
-          <div className="flex items-center justify-between">
+        {/* ── Helper / error row (+ optional count) ── */}
+        {(error || helperText || (showCount && maxLength)) && (
+          <div className="flex items-start justify-between gap-2">
             {error ? (
               <p id={errorId} className="text-xs text-red-500" role="alert">
                 {error}
               </p>
+            ) : helperText ? (
+              <p
+                id={helperId}
+                className="text-xs text-zinc-500 dark:text-zinc-400"
+              >
+                {helperText}
+              </p>
             ) : (
               <span />
             )}
+
             {showCount && maxLength && (
-              <p className="text-xs text-zinc-400 dark:text-zinc-500 tabular-nums">
+              <p className="shrink-0 text-xs tabular-nums text-zinc-400 dark:text-zinc-500">
                 {count}/{maxLength}
               </p>
             )}

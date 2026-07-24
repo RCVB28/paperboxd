@@ -1,6 +1,6 @@
 import Link from "next/link";
-import { Github, Instagram, Twitter } from "lucide-react";
-import { Logo } from "@/components/branding/Logo";
+import { FaGithub, FaInstagram, FaTwitter } from "react-icons/fa";
+import { AuthLogo } from "@/components/branding/Logo";
 import { cn } from "@/lib/utils";
 
 // ─── Link groups ─────────────────────────────────────────────────────────────
@@ -18,15 +18,13 @@ const LEGAL_LINKS = [
 ];
 
 const SOCIAL_LINKS = [
-  { href: "https://twitter.com", label: "Twitter", icon: Twitter },
-  { href: "https://github.com", label: "GitHub", icon: Github },
-  { href: "https://instagram.com", label: "Instagram", icon: Instagram },
+  { href: "https://github.com/RCVB28", label: "GitHub", icon: FaGithub },
 ];
 
 const linkClasses = cn(
   "text-sm text-zinc-500 transition-colors hover:text-amber-700",
   "dark:text-zinc-400 dark:hover:text-amber-500",
-  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-700 focus-visible:ring-offset-2 rounded-sm"
+  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-700 focus-visible:ring-offset-2 rounded-sm",
 );
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -42,7 +40,7 @@ export function Footer({ className, ...props }: FooterProps) {
     <footer
       className={cn(
         "border-t border-zinc-200 bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-950",
-        className
+        className,
       )}
       {...props}
     >
@@ -50,7 +48,7 @@ export function Footer({ className, ...props }: FooterProps) {
         <div className="grid grid-cols-1 gap-10 sm:grid-cols-2 lg:grid-cols-4">
           {/* Brand */}
           <div className="flex flex-col gap-3">
-            <Logo />
+            <AuthLogo />
             <p className="max-w-xs text-sm text-zinc-500 dark:text-zinc-400">
               Track your reading, write reviews, and discover your next
               favourite book or comic.
@@ -105,7 +103,7 @@ export function Footer({ className, ...props }: FooterProps) {
                     className={cn(
                       "flex h-9 w-9 items-center justify-center rounded-full text-zinc-500 transition-colors",
                       "hover:bg-zinc-100 hover:text-amber-700 dark:text-zinc-400 dark:hover:bg-zinc-900 dark:hover:text-amber-500",
-                      "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-700 focus-visible:ring-offset-2"
+                      "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-700 focus-visible:ring-offset-2",
                     )}
                   >
                     <Icon className="h-4 w-4" aria-hidden="true" />

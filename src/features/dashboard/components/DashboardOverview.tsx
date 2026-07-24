@@ -50,7 +50,7 @@ function StatCard({ title, value, icon, trend }: DashboardStat) {
             "mt-3 flex items-center gap-1 text-xs font-medium",
             trend.isPositive
               ? "text-emerald-600 dark:text-emerald-400"
-              : "text-red-600 dark:text-red-400"
+              : "text-red-600 dark:text-red-400",
           )}
         >
           {trend.isPositive ? (
@@ -75,7 +75,10 @@ export function DashboardOverview({
   quickActions,
 }: DashboardOverviewProps) {
   return (
-    <section aria-labelledby="dashboard-heading" className="flex flex-col gap-6">
+    <section
+      aria-labelledby="dashboard-heading"
+      className="flex flex-col gap-6"
+    >
       {/* Welcome header */}
       <header className="flex items-center gap-2.5">
         <h1

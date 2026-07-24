@@ -1,150 +1,148 @@
 "use client";
 
 import * as React from "react";
-import { Search, BookX, Loader2 } from "lucide-react";
+import { BookOpen, Search } from "lucide-react";
 
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { Alert } from "@/components/ui/Alert";
 import { BookCard } from "./BookCard";
-import { ImportBookButton } from "./ImportButton";
 
-import type { OpenLibraryBook } from "../types/open-library";
-import { searchOpenLibraryBooks } from "../actions/search-books";
+import { searchBooks } from "../actions/get-books";
+import type { BookWithRelations } from "../actions/get-books";
+
+import { getAverageRating } from "@/features/reviews/utils/get-average-rating";
+import { FavoriteButton } from "@/features/favorites/components/FavoriteButton";
+import { ReviewButton } from "@/features/reviews/components/ReviewButton";
 
 interface SearchBooksProps {
-  mode?: "admin" | "user" | "readonly";
+  initialBooks: BookWithRelations[];
+  favoritedBookIds: Set<string>;
 }
 
-export function SearchBooks({ mode = "readonly" }: SearchBooksProps) {
+export function SearchBooks({
+  initialBooks,
+  favoritedBookIds,
+}: SearchBooksProps) {
   const [query, setQuery] = React.useState("");
-  const [results, setResults] = React.useState<OpenLibraryBook[]>([]);
+
+  // Always guarantee that books is an array.
+  const [books, setBooks] = React.useState<BookWithRelations[]>(
+    initialBooks ?? [],
+  );
+
   const [isSearching, setIsSearching] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
-
-  // Track if a search has been executed to properly show the "Empty State"
   const [hasSearched, setHasSearched] = React.useState(false);
 
-  const handleSearch = async (e?: React.FormEvent) => {
-    if (e) e.preventDefault();
+  async function handleSearch(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
 
     const trimmedQuery = query.trim();
-    if (!trimmedQuery) return;
 
-    setError(null);
+    // Reset to the complete library when the search is cleared.
+    if (!trimmedQuery) {
+      setBooks(initialBooks ?? []);
+      setHasSearched(false);
+      setError(null);
+      return;
+    }
+
     setIsSearching(true);
+    setError(null);
     setHasSearched(true);
 
     try {
-      const books = await searchOpenLibraryBooks(trimmedQuery);
-      setResults(books || []);
-    } catch {
-      setError(
-        "Unable to search books. Please check your connection and try again.",
-      );
+      const searchResults = await searchBooks(trimmedQuery);
+
+      // Always store an array, even if the action returns undefined.
+      setBooks(searchResults ?? []);
+    } catch (error) {
+      console.error("Book search failed:", error);
+
+      setError("Unable to search books. Please try again.");
+      setBooks([]);
     } finally {
       setIsSearching(false);
     }
-  };
+  }
 
   return (
-    <div className="space-y-8">
-      {/* ── Header & Search Bar ── */}
-      <div className="flex flex-col gap-4">
-        <h1 className="text-2xl font-bold tracking-tight text-zinc-900 dark:text-zinc-100">
-          Search Books
-        </h1>
+    <section className="space-y-8">
+      {/* Search */}
+      <form onSubmit={handleSearch} className="flex w-full max-w-2xl gap-3">
+        <Input
+          value={query}
+          onChange={(event) => setQuery(event.target.value)}
+          placeholder="Search by title, author, or genre..."
+          disabled={isSearching}
+          aria-label="Search books"
+        />
 
-        {/* Wrapped in a form so users can hit the "Enter" key to submit */}
-        <form onSubmit={handleSearch} className="flex w-full max-w-2xl gap-3">
-          <Input
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search Open Library by title or author..."
-            disabled={isSearching}
-            className="flex-1"
-            aria-label="Search books query"
-          />
-          <Button
-            type="submit"
-            variant="primary"
-            disabled={isSearching || !query.trim()}
-          >
-            {isSearching ? (
-              <Loader2
-                className="mr-2 h-4 w-4 animate-spin"
-                aria-hidden="true"
-              />
-            ) : (
-              <Search className="mr-2 h-4 w-4" aria-hidden="true" />
-            )}
-            Search
-          </Button>
-        </form>
-      </div>
+        <Button
+          type="submit"
+          isLoading={isSearching}
+          disabled={isSearching || !query.trim()}
+        >
+          <Search className="mr-2 h-4 w-4" />
+          Search
+        </Button>
+      </form>
 
-      {/* ── Error State ── */}
+      {/* Error */}
       {error && (
         <Alert variant="error" aria-live="assertive">
           {error}
         </Alert>
       )}
 
-      {/* ── Empty State ── */}
-      {!isSearching && hasSearched && results.length === 0 && !error && (
+      {/* Empty Search Results */}
+      {!isSearching && hasSearched && books.length === 0 && !error && (
         <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-zinc-200 py-16 text-center dark:border-zinc-800">
-          <BookX
-            className="mb-4 h-12 w-12 text-zinc-400 dark:text-zinc-600"
+          <BookOpen
+            className="mb-4 h-10 w-10 text-zinc-400"
             aria-hidden="true"
           />
-          <h3 className="text-lg font-semibold text-zinc-900 dark:text-zinc-100">
-            No books found
-          </h3>
-          <p className="mt-1 max-w-sm text-sm text-zinc-500 dark:text-zinc-400">
-            We couldn't find any results for "{query}". Try adjusting your
-            search terms or checking for typos.
+
+          <h2 className="font-semibold">No books found</h2>
+
+          <p className="mt-1 text-sm text-zinc-500">
+            Try searching for a different title, author, or genre.
           </p>
         </div>
       )}
 
-      {/* ── Results Grid ── */}
-      {results.length > 0 && (
-        <div
-          className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
-          aria-live="polite"
-        >
-          {results.map((book) => {
-            const coverUrl = book.coverId
-              ? `https://covers.openlibrary.org/b/id/${book.coverId}-L.jpg`
-              : undefined;
+      {/* Search Results */}
+      {books.length > 0 && (
+        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3">
+          {books.map((book) => {
+            const averageRating = getAverageRating(book.reviews) ?? 0;
 
             return (
               <BookCard
-                key={book.key}
+                key={book.id}
+                href={`/books/${book.id}`}
                 title={book.title}
-                author={book.author}
-                publishedYear={book.firstPublishYear}
-                coverUrl={coverUrl}
-                type="BOOK"
+                author={book.author.name}
+                coverUrl={book.coverUrl ?? undefined}
+                publishedYear={book.publishedYear}
+                type={book.type}
+                rating={averageRating}
                 action={
-                  mode === "admin" ? (
-                    <ImportBookButton
-                      book={{
-                        openLibraryKey: book.key,
-                        title: book.title,
-                        author: book.author,
-                        coverUrl,
-                        publishedYear: book.firstPublishYear ?? undefined,
-                        type: "BOOK",
-                      }}
+                  <div className="flex flex-wrap gap-2">
+                    <FavoriteButton
+                      bookId={book.id}
+                      initialFavorited={favoritedBookIds.has(book.id)}
                     />
-                  ) : null
+
+                    <ReviewButton bookId={book.id} />
+                  </div>
                 }
               />
             );
           })}
         </div>
       )}
-    </div>
+    </section>
   );
 }

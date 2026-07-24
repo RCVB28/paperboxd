@@ -8,11 +8,16 @@ import { toggleFavorite } from "../actions/favorite-books";
 
 interface FavoriteButtonProps {
   bookId: string;
+  /** True favorited status fetched server-side for the current user. */
+  initialFavorited?: boolean;
 }
 
-export function FavoriteButton({ bookId }: FavoriteButtonProps) {
+export function FavoriteButton({
+  bookId,
+  initialFavorited = false,
+}: FavoriteButtonProps) {
   const [isLoading, setIsLoading] = React.useState(false);
-  const [favorited, setFavorited] = React.useState(false);
+  const [favorited, setFavorited] = React.useState(initialFavorited);
 
   const handleClick = async () => {
     setIsLoading(true);
@@ -20,12 +25,8 @@ export function FavoriteButton({ bookId }: FavoriteButtonProps) {
     try {
       const result = await toggleFavorite(bookId);
 
-      if (result.success) {
-        if (result.success && typeof result.favorited === "boolean") {
-          setFavorited(result.favorited);
-        } else {
-          alert(result.message);
-        }
+      if (result.success && typeof result.favorited === "boolean") {
+        setFavorited(result.favorited);
       } else {
         alert(result.message);
       }
@@ -36,6 +37,7 @@ export function FavoriteButton({ bookId }: FavoriteButtonProps) {
 
   return (
     <Button
+      type="button"
       size="sm"
       variant={favorited ? "secondary" : "primary"}
       isLoading={isLoading}

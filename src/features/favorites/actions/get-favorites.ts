@@ -1,6 +1,6 @@
 "use server";
 
-import { auth } from "@/auth";
+import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 
 export async function getFavorites() {
@@ -19,6 +19,7 @@ export async function getFavorites() {
         include: {
           author: true,
           genre: true,
+          reviews: true,
         },
       },
     },

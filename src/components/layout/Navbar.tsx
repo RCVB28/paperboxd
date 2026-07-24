@@ -1,20 +1,33 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { Menu, X } from "lucide-react";
-import { Logo } from "@/components/branding/Logo";
+import { Menu, X, Heart, ChevronDown, LogOut, User } from "lucide-react";
+
+import { AuthLogo } from "@/components/branding/Logo";
 import { Button } from "@/components/ui/Button";
 import { cn } from "@/lib/utils";
 
-// ─── Nav links ────────────────────────────────────────────────────────────────
-// Not exposed as a prop — this is layout structure, not session/business data.
+import { logout } from "@/features/auth/actions/logout";
 
-const NAV_LINKS = [
+// ─── Nav links ────────────────────────────────────────────────────────────────
+
+interface NavLink {
+  href: string;
+  label: string;
+  icon?: React.ReactNode;
+}
+
+const BASE_NAV_LINKS: NavLink[] = [
   { href: "/dashboard", label: "Dashboard" },
   { href: "/books", label: "Books" },
-  { href: "/reviews", label: "Reviews" },
-] as const;
+];
+
+const FAVORITES_LINK: NavLink = {
+  href: "/favorites",
+  label: "Favorites",
+  icon: <Heart className="h-4 w-4" aria-hidden="true" />,
+};
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -24,20 +37,55 @@ export interface NavbarProps {
     avatarUrl?: string | null;
     role: "USER" | "ADMIN";
   } | null;
+
   authActions?: React.ReactNode;
   userMenu?: React.ReactNode;
 }
 
-// ─── Component ───────────────────────────────────────────────────────────────
+// ─── Component ────────────────────────────────────────────────────────────────
 
-export function Navbar({ user, authActions, userMenu }: NavbarProps) {
+export function Navbar({ user, authActions }: NavbarProps) {
   const [isOpen, setIsOpen] = useState(false);
+  const [isProfileOpen, setIsProfileOpen] = useState(false);
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
+
+  const profileMenuRef = useRef<HTMLDivElement>(null);
+
+  const navLinks = user ? [...BASE_NAV_LINKS, FAVORITES_LINK] : BASE_NAV_LINKS;
+
+  // Close profile dropdown when clicking outside
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (
+        profileMenuRef.current &&
+        !profileMenuRef.current.contains(event.target as Node)
+      ) {
+        setIsProfileOpen(false);
+      }
+    }
+
+    document.addEventListener("mousedown", handleClickOutside);
+
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []);
+
+  async function handleLogout() {
+    setIsLoggingOut(true);
+
+    try {
+      await logout();
+    } finally {
+      setIsLoggingOut(false);
+    }
+  }
 
   return (
     <nav
       className={cn(
         "sticky top-0 z-50 w-full border-b border-zinc-200 dark:border-zinc-800",
-        "bg-white/80 backdrop-blur-md dark:bg-zinc-950/80"
+        "bg-white/80 backdrop-blur-md dark:bg-zinc-950/80",
       )}
     >
       <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
@@ -46,30 +94,114 @@ export function Navbar({ user, authActions, userMenu }: NavbarProps) {
           href="/"
           className="flex items-center rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-700 focus-visible:ring-offset-2"
         >
-          <Logo />
+          <AuthLogo />
         </Link>
 
         {/* Desktop nav links */}
         <ul className="hidden items-center gap-1 md:flex">
-          {NAV_LINKS.map((link) => (
+          {navLinks.map((link) => (
             <li key={link.href}>
               <Link
                 href={link.href}
                 className={cn(
-                  "rounded-md px-3 py-2 text-sm font-medium text-zinc-600 transition-colors",
+                  "flex items-center gap-1.5 rounded-md px-3 py-2 text-sm font-medium text-zinc-600 transition-colors",
                   "hover:text-amber-700 dark:text-zinc-300 dark:hover:text-amber-500",
-                  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-700 focus-visible:ring-offset-2"
+                  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-700 focus-visible:ring-offset-2",
                 )}
               >
+                {link.icon}
                 {link.label}
               </Link>
             </li>
           ))}
         </ul>
 
-        {/* Right side: auth state (desktop) */}
+        {/* Desktop right side */}
         <div className="hidden items-center md:flex">
-          {user ? userMenu : authActions}
+          {user ? (
+            <div ref={profileMenuRef} className="relative">
+              {/* Profile trigger */}
+              <button
+                type="button"
+                onClick={() => setIsProfileOpen((prev) => !prev)}
+                aria-expanded={isProfileOpen}
+                aria-haspopup="menu"
+                className={cn(
+                  "flex items-center gap-2 rounded-md px-2 py-1.5",
+                  "text-sm font-medium text-zinc-700 transition-colors",
+                  "hover:bg-zinc-100 dark:text-zinc-200 dark:hover:bg-zinc-800",
+                  "focus-visible:outline-none focus-visible:ring-2",
+                  "focus-visible:ring-amber-700",
+                )}
+              >
+                {user.avatarUrl ? (
+                  <img
+                    src={user.avatarUrl}
+                    alt={`${user.name}'s profile`}
+                    className="h-8 w-8 rounded-full object-cover"
+                  />
+                ) : (
+                  <div className="flex h-8 w-8 items-center justify-center rounded-full bg-amber-100 text-sm font-semibold text-amber-800 dark:bg-amber-900/40 dark:text-amber-300">
+                    {user.name.charAt(0).toUpperCase()}
+                  </div>
+                )}
+
+                <span className="max-w-32 truncate">{user.name}</span>
+
+                <ChevronDown
+                  className={cn(
+                    "h-4 w-4 transition-transform",
+                    isProfileOpen && "rotate-180",
+                  )}
+                  aria-hidden="true"
+                />
+              </button>
+
+              {/* Dropdown */}
+              {isProfileOpen && (
+                <div
+                  role="menu"
+                  className="absolute right-0 mt-2 w-52 rounded-lg border border-zinc-200 bg-white p-1 shadow-lg dark:border-zinc-800 dark:bg-zinc-900"
+                >
+                  <Link
+                    href="/profile"
+                    role="menuitem"
+                    onClick={() => setIsProfileOpen(false)}
+                    className="flex items-center gap-2 rounded-md px-3 py-2 text-sm text-zinc-700 hover:bg-zinc-100 dark:text-zinc-200 dark:hover:bg-zinc-800"
+                  >
+                    <User className="h-4 w-4" aria-hidden="true" />
+                    Profile
+                  </Link>
+
+                  <Link
+                    href="/favorites"
+                    role="menuitem"
+                    onClick={() => setIsProfileOpen(false)}
+                    className="flex items-center gap-2 rounded-md px-3 py-2 text-sm text-zinc-700 hover:bg-zinc-100 dark:text-zinc-200 dark:hover:bg-zinc-800"
+                  >
+                    <Heart className="h-4 w-4" aria-hidden="true" />
+                    Favorites
+                  </Link>
+
+                  <div className="my-1 border-t border-zinc-200 dark:border-zinc-800" />
+
+                  <button
+                    type="button"
+                    role="menuitem"
+                    disabled={isLoggingOut}
+                    onClick={handleLogout}
+                    className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-sm text-red-600 hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50 dark:text-red-400 dark:hover:bg-red-950/30"
+                  >
+                    <LogOut className="h-4 w-4" aria-hidden="true" />
+
+                    {isLoggingOut ? "Logging out..." : "Logout"}
+                  </button>
+                </div>
+              )}
+            </div>
+          ) : (
+            authActions
+          )}
         </div>
 
         {/* Mobile menu toggle */}
@@ -93,17 +225,18 @@ export function Navbar({ user, authActions, userMenu }: NavbarProps) {
       {isOpen && (
         <div className="border-t border-zinc-200 px-4 pb-4 pt-2 md:hidden dark:border-zinc-800">
           <ul className="flex flex-col gap-1">
-            {NAV_LINKS.map((link) => (
+            {navLinks.map((link) => (
               <li key={link.href}>
                 <Link
                   href={link.href}
                   onClick={() => setIsOpen(false)}
                   className={cn(
-                    "block rounded-md px-3 py-2 text-sm font-medium text-zinc-600 transition-colors",
+                    "flex items-center gap-1.5 rounded-md px-3 py-2 text-sm font-medium text-zinc-600 transition-colors",
                     "hover:bg-zinc-50 hover:text-amber-700 dark:text-zinc-300 dark:hover:bg-zinc-900 dark:hover:text-amber-500",
-                    "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-700"
+                    "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-700",
                   )}
                 >
+                  {link.icon}
                   {link.label}
                 </Link>
               </li>
@@ -111,7 +244,30 @@ export function Navbar({ user, authActions, userMenu }: NavbarProps) {
           </ul>
 
           <div className="mt-3 border-t border-zinc-100 pt-3 dark:border-zinc-800">
-            {user ? userMenu : authActions}
+            {user ? (
+              <div className="space-y-1">
+                <Link
+                  href="/profile"
+                  onClick={() => setIsOpen(false)}
+                  className="flex items-center gap-2 rounded-md px-3 py-2 text-sm text-zinc-700 hover:bg-zinc-100 dark:text-zinc-200 dark:hover:bg-zinc-800"
+                >
+                  <User className="h-4 w-4" />
+                  Profile
+                </Link>
+
+                <button
+                  type="button"
+                  disabled={isLoggingOut}
+                  onClick={handleLogout}
+                  className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-sm text-red-600 hover:bg-red-50 disabled:opacity-50 dark:text-red-400 dark:hover:bg-red-950/30"
+                >
+                  <LogOut className="h-4 w-4" />
+                  {isLoggingOut ? "Logging out..." : "Logout"}
+                </button>
+              </div>
+            ) : (
+              authActions
+            )}
           </div>
         </div>
       )}

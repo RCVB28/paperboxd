@@ -4,4 +4,5 @@ export interface OpenLibraryBook {
   author: string;
   firstPublishYear: number | null;
   coverId: number | null;
+  description?: string;
 }
