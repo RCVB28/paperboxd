@@ -149,7 +149,7 @@ export default async function ProfilePage() {
                 Explore the library and click the heart icon on books you love.
               </p>
               <Link
-                href="/library"
+                href="/books"
                 className="mt-4 inline-flex items-center gap-1.5 text-xs font-semibold text-amber-600 hover:underline dark:text-amber-500"
               >
                 <span>Browse Library</span>
