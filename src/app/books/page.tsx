@@ -1,4 +1,4 @@
-export const revalidate = 60;
+export const dynamic = "force-dynamic";
 
 import { getBooks } from "@/features/books/actions/get-books";
 import { getFavoritedBookIds } from "@/features/favorites/actions/get-favorited-book-ids";

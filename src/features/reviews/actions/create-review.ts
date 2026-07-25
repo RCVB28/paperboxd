@@ -1,5 +1,6 @@
 "use server";
 
+import { revalidatePath } from "next/cache"; // 1. Import this
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import type { CreateReviewInput } from "../schemas/review.schema";
@@ -52,6 +53,10 @@ export async function createReview(data: CreateReviewInput) {
       userId: session.user.id,
     },
   });
+
+  // 5. IMPORTANT: Tell Next.js to refresh the data on these pages
+  revalidatePath("/books");
+  revalidatePath(`/books/${data.bookId}`); // If you have an individual book page
 
   return {
     success: true,
