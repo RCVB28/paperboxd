@@ -2,7 +2,16 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { Menu, X, Heart, ChevronDown, LogOut, User } from "lucide-react";
+import {
+  Menu,
+  X,
+  Heart,
+  ChevronDown,
+  LogOut,
+  User,
+  Library,
+  Download,
+} from "lucide-react";
 
 import { AuthLogo } from "@/components/branding/Logo";
 import { Button } from "@/components/ui/Button";
@@ -29,6 +38,18 @@ const FAVORITES_LINK: NavLink = {
   icon: <Heart className="h-4 w-4" aria-hidden="true" />,
 };
 
+const ADMIN_BOOKS_LINK: NavLink = {
+  href: "/admin/books",
+  label: "Manage Books",
+  icon: <Library className="h-4 w-4" aria-hidden="true" />,
+};
+
+const ADMIN_IMPORT_LINK: NavLink = {
+  href: "/admin/import",
+  label: "Import Books",
+  icon: <Download className="h-4 w-4" aria-hidden="true" />,
+};
+
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 export interface NavbarProps {
@@ -51,7 +72,12 @@ export function Navbar({ user, authActions }: NavbarProps) {
 
   const profileMenuRef = useRef<HTMLDivElement>(null);
 
-  const navLinks = user ? [...BASE_NAV_LINKS, FAVORITES_LINK] : BASE_NAV_LINKS;
+  // Construct nav links based on login state & role
+  const navLinks = [
+    ...BASE_NAV_LINKS,
+    ...(user ? [FAVORITES_LINK] : []),
+    ...(user?.role === "ADMIN" ? [ADMIN_BOOKS_LINK, ADMIN_IMPORT_LINK] : []),
+  ];
 
   // Close profile dropdown when clicking outside
   useEffect(() => {
@@ -148,6 +174,12 @@ export function Navbar({ user, authActions }: NavbarProps) {
 
                 <span className="max-w-32 truncate">{user.name}</span>
 
+                {user.role === "ADMIN" && (
+                  <span className="rounded bg-amber-100 px-1.5 py-0.5 text-[10px] font-bold tracking-wide text-amber-800 dark:bg-amber-900/50 dark:text-amber-300">
+                    ADMIN
+                  </span>
+                )}
+
                 <ChevronDown
                   className={cn(
                     "h-4 w-4 transition-transform",
@@ -183,6 +215,36 @@ export function Navbar({ user, authActions }: NavbarProps) {
                     Favorites
                   </Link>
 
+                  {/* Admin Tools Section */}
+                  {user.role === "ADMIN" && (
+                    <>
+                      <div className="my-1 border-t border-zinc-200 dark:border-zinc-800" />
+                      <div className="px-3 py-1.5 text-xs font-semibold text-zinc-500 dark:text-zinc-400">
+                        Admin Tools
+                      </div>
+
+                      <Link
+                        href="/admin/books"
+                        role="menuitem"
+                        onClick={() => setIsProfileOpen(false)}
+                        className="flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium text-amber-700 hover:bg-amber-50 dark:text-amber-400 dark:hover:bg-amber-950/30"
+                      >
+                        <Library className="h-4 w-4" aria-hidden="true" />
+                        Manage Books
+                      </Link>
+
+                      <Link
+                        href="/admin/import"
+                        role="menuitem"
+                        onClick={() => setIsProfileOpen(false)}
+                        className="flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium text-amber-700 hover:bg-amber-50 dark:text-amber-400 dark:hover:bg-amber-950/30"
+                      >
+                        <Download className="h-4 w-4" aria-hidden="true" />
+                        Import Books
+                      </Link>
+                    </>
+                  )}
+
                   <div className="my-1 border-t border-zinc-200 dark:border-zinc-800" />
 
                   <button
@@ -193,7 +255,6 @@ export function Navbar({ user, authActions }: NavbarProps) {
                     className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-sm text-red-600 hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50 dark:text-red-400 dark:hover:bg-red-950/30"
                   >
                     <LogOut className="h-4 w-4" aria-hidden="true" />
-
                     {isLoggingOut ? "Logging out..." : "Logout"}
                   </button>
                 </div>
@@ -254,6 +315,34 @@ export function Navbar({ user, authActions }: NavbarProps) {
                   <User className="h-4 w-4" />
                   Profile
                 </Link>
+
+                {/* Admin Tools Section (Mobile) */}
+                {user.role === "ADMIN" && (
+                  <>
+                    <div className="my-2 border-t border-zinc-100 dark:border-zinc-800" />
+                    <div className="px-3 py-1 text-xs font-semibold text-zinc-500 dark:text-zinc-400">
+                      Admin Tools
+                    </div>
+                    <Link
+                      href="/admin/books"
+                      onClick={() => setIsOpen(false)}
+                      className="flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium text-amber-700 hover:bg-amber-50 dark:text-amber-400 dark:hover:bg-amber-950/30"
+                    >
+                      <Library className="h-4 w-4" />
+                      Manage Books
+                    </Link>
+                    <Link
+                      href="/admin/import"
+                      onClick={() => setIsOpen(false)}
+                      className="flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium text-amber-700 hover:bg-amber-50 dark:text-amber-400 dark:hover:bg-amber-950/30"
+                    >
+                      <Download className="h-4 w-4" />
+                      Import Books
+                    </Link>
+                  </>
+                )}
+
+                <div className="my-2 border-t border-zinc-100 dark:border-zinc-800" />
 
                 <button
                   type="button"

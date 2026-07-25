@@ -61,7 +61,7 @@ export default async function BookReviewsPage({
         </section>
 
         {/* Reviews */}
-        <ReviewList reviews={book.reviews} />
+        <ReviewList reviews={book.reviews} currentUserId={session?.user?.id} />
       </main>
 
       <Footer />

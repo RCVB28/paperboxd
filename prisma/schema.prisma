@@ -93,7 +93,7 @@ model Book {
 model Review {
   id          String      @id @default(cuid())
   rating      Int
-  comment     String
+  comment     String? 
 
   createdAt   DateTime    @default(now())
   updatedAt   DateTime    @updatedAt

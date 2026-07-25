@@ -71,22 +71,6 @@ export function Footer({ className, ...props }: FooterProps) {
             </ul>
           </nav>
 
-          {/* Legal */}
-          <nav aria-label="Legal">
-            <h3 className="mb-3 text-sm font-semibold text-zinc-900 dark:text-zinc-100">
-              Legal
-            </h3>
-            <ul className="flex flex-col gap-2">
-              {LEGAL_LINKS.map((link) => (
-                <li key={link.href}>
-                  <Link href={link.href} className={linkClasses}>
-                    {link.label}
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          </nav>
-
           {/* Social */}
           <div>
             <h3 className="mb-3 text-sm font-semibold text-zinc-900 dark:text-zinc-100">
@@ -117,7 +101,7 @@ export function Footer({ className, ...props }: FooterProps) {
         {/* Divider + copyright */}
         <div className="mt-10 border-t border-zinc-200 pt-6 dark:border-zinc-800">
           <p className="text-xs text-zinc-400 dark:text-zinc-500">
-            © {year} Paperboxd. All rights reserved.
+            Created year {year}.
           </p>
         </div>
       </div>

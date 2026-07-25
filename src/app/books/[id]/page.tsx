@@ -163,9 +163,12 @@ export default async function BookDetailsPage({
           )}
         </section>
 
-        {/* ── Reviews Preview ── */}
+        {/* Reviews Section */}
         <section className="mt-16 border-t border-zinc-200 pt-12 dark:border-zinc-800">
-          <ReviewList reviews={recentReviews} />
+          <ReviewList
+            reviews={recentReviews}
+            currentUserId={session?.user?.id}
+          />
 
           {totalReviewsCount > 0 && (
             <div className="mt-8 flex items-center justify-start">
