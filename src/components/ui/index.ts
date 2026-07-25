@@ -21,8 +21,8 @@ export {
 } from "./Card";
 export type { CardProps } from "./Card";
 
-export { Textarea } from "./TextArea";
-export type { TextareaProps } from "./TextArea";
+export { Textarea } from "./Textarea";
+export type { TextareaProps } from "./Textarea";
 
 export { Spinner } from "./Spinner";
 export type { SpinnerProps } from "./Spinner";

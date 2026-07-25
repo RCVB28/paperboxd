@@ -8,7 +8,7 @@ import { Trash2 } from "lucide-react";
 
 import { Button } from "@/components/ui/Button";
 import { Alert } from "@/components/ui/Alert";
-import { Textarea } from "@/components/ui/TextArea";
+import { Textarea } from "@/components/ui/Textarea";
 import { StarRating } from "@/features/reviews/components/StarRating";
 
 import {
